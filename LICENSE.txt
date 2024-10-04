@@ -1,0 +1,1 @@
+mqtt-client © 2024 by Jorge Martín Pérez is licensed under CC BY-NC-SA 4.0 
