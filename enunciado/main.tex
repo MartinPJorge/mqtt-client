@@ -1,0 +1,532 @@
+\documentclass{upmassignment}
+\usepackage[spanish]{babel}
+\usepackage{ifthen}
+\usepackage{amsmath}
+\usepackage{amsfonts}
+\usepackage{booktabs}
+\usepackage[x11names]{xcolor}
+\usepackage{tcolorbox}
+\usepackage{cclicenses}
+
+\usepackage{listings}
+\lstset{basicstyle=\ttfamily,
+  showstringspaces=false,
+  commentstyle=\color{red},
+  keywordstyle=\color{blue},
+  backgroundcolor=\color{gray!30},
+}
+
+
+\usetikzlibrary{calc}
+
+
+
+% Para mostrar/ocultar soluciones
+\newboolean{show}
+\setboolean{show}{true}
+\setboolean{show}{false}
+\usepackage{environ}
+\NewEnviron{solucion}{
+  \ifshow
+      \begin{answer}\BODY\end{answer}
+  \fi}
+
+
+
+
+
+
+\coursetitle{Redes y Servicios}
+\courselabel{RSER}
+\exercisesheet{Cliente MQTT}{}
+\student{\ }%
+\semester{Primer Semestre 2024/2025}
+\date{\today}
+\university{Universidad Politécnica de Madrid}
+\school{Departamento de Ingeniería de Sistemas Telemáticos}
+%\usepackage[pdftex]{graphicx}
+%\usepackage{subfigure}
+
+
+\setlength{\textwidth}{5.0in}
+\linespread{1.3}
+\renewcommand{\PB}{{\bfseries Problema}}
+
+
+
+\begin{document}
+
+\section*{Introducción}
+
+\noindent
+En esta práctica\footnote{Todas las preguntas
+tienen el mismo valor/puntuación.
+Cada apartado del Problema~2 tiene el
+mismo valor que el resto de Problemas.}\footnote{Este material está protegido por la
+licencia
+CC BY-NC-SA 4.0.
+\byncsa
+}
+vamos a crear un cliente
+MQTT
+\texttt{client.py}
+que enviará constantes vitales
+de un Sensor.
+Para ello se proporciona el programa
+\texttt{reporter.sh}
+(disponible en Moodle)
+que va añadiendo líneas a un archivo
+\texttt{report.csv}
+que almacena las constantes vitales
+de un sensor.
+
+
+
+
+
+
+\begin{figure}[h]
+    \centering
+\begin{tikzpicture}
+    \node[draw,rectangle] (sensor) at (0,0)
+        {Sensor};
+    \node[draw,rectangle] (script)
+        at ($(sensor)+(0,-1)$)
+        {\texttt{reporter.sh}};
+    \node[draw,rectangle,anchor=west]
+        (report)
+        at ($(script.east)+(1,0)$)
+        {\texttt{report.csv}};
+    \node[draw,rectangle]
+        (utils)
+        at ($(report)+(0,1)$)
+        {\texttt{utils.py}};
+    \node[draw,rectangle,fill=gray!30]
+        (client)
+        at ($(utils)+(0,1)$)
+        {\texttt{client.py}};
+    \node[draw,rectangle]
+        (server)
+        at ($(client)+(5,0)$)
+        {server};
+    \node[align=center,anchor=north]
+        at (server.south)
+        {\texttt{broker.emqx.io}\\
+        \texttt{port:1883}};
+
+    \draw[arrows=<->] (sensor.south)
+        -- (script.north);
+    \draw[arrows=->] (script.east)
+        -- (report.west);
+    \draw[arrows=<->] (report.north)
+        -- (utils.south);
+    \draw[arrows=<->] (utils.north)
+        -- (client.south);
+    \draw[arrows=<->] (client.east)
+        --
+        node[midway,above,align=center]
+        {MQTT\\connection}
+        (server.west);
+
+
+
+\end{tikzpicture}
+\caption{Escenario de la práctica.}
+\label{fig:escenario}
+\end{figure}
+
+
+\section*{Instalación de Dependencias}
+\noindent
+Antes de comenzar la práctica debemos
+instalar las dependencias necesarias
+para python y MQTT. 
+Descargue el fichero
+\texttt{practica-cliente.zip}
+de Moodle y descomprímalo en
+su carpeta personal.
+Abra una terminal y ejecute
+las siguientes líneas
+\begin{lstlisting}[language=bash]
+$ cd ~/practica-cliente
+$ ./dependencies.sh
+\end{lstlisting}
+
+
+
+
+
+\section*{Generación de Constantes Vitales}
+\noindent Para generar el archivo
+\texttt{report.csv} con las constantes
+vitales, ejecute el programa
+que reporta las medidas del sensor:
+\begin{lstlisting}[language=bash]
+$ cd ~/practica-cliente
+$ ./reporter.sh
+\end{lstlisting}
+Tras ejecutar las líneas de arriba,
+verá que se ha generado un archivo
+\texttt{report.csv} con las siguientes
+columnas (separadas por comas):
+\begin{lstlisting}
+Idx, Time (s), HR (BPM), RESP (BPM), SpO2 (%),TEMP (*C),OUTPUT
+0,0,94,21,97,36.2,Normal
+1,1,94,25,97,36.2,Normal
+2,2,101,25,93,38,Abnormal
+3,3,55,11,100,35,Abnormal
+\end{lstlisting}
+\emph{Nota}:
+el archivo \texttt{report.csv} se genera
+de cero para cada ejecución del
+el \texttt{reporter.sh}. 
+
+
+\section*{Lectura de Constantes Vitales}
+\noindent 
+A continuación va a programar la
+función \texttt{read\_report()} encargada
+de leer constantes vitales del reporte.
+Esta función se encuentra en el archivo
+\texttt{utils.py} y se encarga
+de leer el archivo de reporte
+\texttt{report.csv}. Por ejemplo,
+podemos empezar en la tercera línea
+del archivo y leer dos líneas usando
+\begin{lstlisting}[language=bash]
+$ python3
+>>> import utils
+>>> utils.read_report('report.csv',10,2)
+['9,9,94,26,97,29,Normal\n', '10,10,94,26,97,42,Abnormal\n']
+\end{lstlisting}
+
+Para más detalles sobre el funcionamiento
+de \texttt{read\_report()}, lea
+la descripción de la función en el
+archivo \texttt{utils.py}.
+Tendrá que utilizar las funciones
+\texttt{open()} y \texttt{read\_lines()}
+para programar la función.
+
+
+\begin{problemlist}
+    \pbitem Programe la función
+    \texttt{read\_report()} y
+    ejecútela usando como parámetros
+    \texttt{LAST\_LINE=$X$}
+    y
+    \texttt{num\_lines=$\lceil \tfrac{X}{2} \rceil$},
+    donde $X$ es el número de grupo
+    asignado por el profesor.
+    Copie el resultado en el
+    campo \texttt{lectura} del
+    archivo
+    \texttt{respuestas-X.json}
+    usando dobles comillas:
+\begin{lstlisting}
+{
+    "lectura": [ "9,9,94,26,97,29,Normal\n",
+      "10,10,94,26,97,42,Abnormal\n"]
+}
+\end{lstlisting}
+\end{problemlist}
+\emph{Nota}: deje corriendo
+\texttt{reporter.sh} para que genere
+suficientes reportes.
+
+
+
+\section*{Cliente MQTT}
+\subsection*{Conexión}
+\noindent
+A continuación va a programar parte
+de la lógica del cliente MQTT.
+En concreto se va a programar la conexión
+del \texttt{client.py} con el
+server ilustrada en la
+Figura.~\ref{fig:escenario},
+donde se especifica la dirección y puerto
+del servidor.
+
+Para la comunicación con el servidor
+mediante MQTT,
+el programa \texttt{client.py} utiliza
+la librería \texttt{PAHO} de python.
+Los pasos para abrir una conexión
+(consulte la plantilla del cliente
+\texttt{client.py})
+son los siguientes:
+\begin{enumerate}
+    \item Conectarse con el servidor
+        MQTT: función
+        \texttt{connect\_mqtt()}; e
+    \item invocar el bucle de publicación
+        de mensajes:
+        función \texttt{publish()}.
+\end{enumerate}
+
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}
+        \node[draw,rectangle,fill=gray!30]
+            (client) at (0,0)
+            {\texttt{client.py}};
+        \node[draw,rectangle] (server) at
+            ($(client)+(8,0)$)
+            {server};
+        \node[align=center,anchor=north]
+            at (server.south)
+            {\texttt{broker.emqx.io}\\
+            \texttt{port:1883}};
+
+        \draw[arrows=<->]
+            (client.north east)
+            --
+            node[midway,above]
+            {\texttt{connect\_mqtt()}}
+            (server.north west);
+        \draw[arrows=->]
+            (client.south east)
+            --
+            node[midway,below]
+            {\texttt{publish()}}
+            (server.south west);
+    \end{tikzpicture}
+    \caption{Conexión y publicación del
+    cliente.}
+    \label{fig:connect-publish}
+\end{figure}
+
+
+Modifique la plantilla de
+\texttt{client.py} para conectarse
+al servidor y responda a las siguientes
+preguntas.
+
+\begin{problemlist}
+    \stepcounter{enumi}
+    \pbitem Inicie una captura wireshark
+        en todas las interfaces
+        (\texttt{any}) poniendo filtro
+        ``mqtt''. Ejecute en la consola
+        \texttt{client.py} e identifique
+        las tramas de conexión y ACK
+        en wireshark. Detenga la captura
+        y rellene las
+        siguientes preguntas en el
+        JSON de respuestas:
+        \begin{enumerate}
+            \item ¿Cuál es el ID de su cliente?
+            \item En la captura wireshark,
+                ¿cuál es el número de trama
+                del ACK de la conexión?
+        \end{enumerate}
+        Guarde\footnote{Para guardas solo los paquetes MQTT
+                basta con poner en el filtro
+                ``mqtt'',
+                pinchar en
+                File-Export Specified Packets,
+                y en el cuadro ``Packet
+                Range'' pinchar en la
+                bola  ``Displayed''.}
+                la captura en el fichero
+        \texttt{captura-connect-grupoX.pcapng}.
+Siga el mismo procedimiento del
+pie de página para todas las capturas
+de la práctica.
+\end{problemlist}
+
+
+
+\subsection*{Publicación}
+\noindent A continuación debe
+modificar el \texttt{client.py} para
+leer los datos del sensor
+(archivo \texttt{report.csv}) y publicarlos
+en el topic
+\texttt{rserGX/vitals}, donde X
+es su número de grupo.
+
+La función \texttt{publish()}
+contiene un bucle que continuamente publica
+mensajes MQTT. Modifique el bucle
+para que espere
+$(X\mod{5}) + 5$ segundos al final de cada
+iteración.
+Además, modifique \texttt{publish()}
+para invocar a \texttt{read\_report()} y
+publicar \emph{una a una}
+las constantes vitales.
+%% En concreto,
+%% debe enviar el valor de
+%% la columna \texttt{Time (s)}
+%% (columna número 1)
+%% y la columna
+%% $(X \mod{4}) + 2$.
+
+
+
+Tras haber realizado las modificaciones
+indicadas, inicie una captura en
+wireshark filtrando paquetes MQTT y
+responda a las siguientes
+preguntas usando la captura entregada.
+Para ello responda en
+en el JSON de respuestas a:
+
+
+\begin{problemlist}
+    \stepcounter{enumi}
+    \stepcounter{enumi}
+    \pbitem ¿En qué instante
+        se envía la muestra $X$?
+        (valor ``Time'' en wireshark).
+
+    \pbitem ¿Cuánto tiempo
+        pasa entre dos 
+        Ping de MQTT?
+\end{problemlist}
+
+Guarde la captura en el fichero
+\texttt{captura-publish-grupoX.pcapng}.
+
+
+\subsection*{Desconexión y QoS}
+\noindent A continuación vamos a probar
+los distintos niveles de QoS ofrecidos
+por MQTT. Para ello basta con
+añadir el argumento
+\texttt{qos=$q$} a la función
+\texttt{client.publish()}, donde
+$q\in\{0,1,2\}$ especifica el nivel
+QoS de MQTT.
+
+En primer lugar vamos a probar
+qué sucede con un Qos de 0 si se
+cae la conexión. Para ello vamos a
+apagar la interfaz
+\texttt{eth0} usando el
+siguiente comando
+\begin{lstlisting}[language=bash]
+$ ip link set down dev eth0
+\end{lstlisting}
+y la encenderemos con el siguiente comando
+\begin{lstlisting}[language=bash]
+$ ip link set up dev eth0
+\end{lstlisting}
+
+
+
+\subsection*{QoS 0}
+\noindent
+Ponga un QoS 0 y ejecute el
+\texttt{client.py} usando el
+siguiente comando para guardar la salida:
+\begin{lstlisting}[language=bash]
+$ python3 client.py 2>&1 | tee /tmp/qos0-grupoX.log
+\end{lstlisting}
+
+Inicie una
+captura en wireshark filtrando
+tráfico MQTT y espere a que
+se envíen, al menos, dos tramas
+PUBLISH. Apague la interfaz
+\texttt{eth0} y espere a que
+el cliente imprima
+``Failed to send message [...]''.
+Vuelva a encender la interfaz.
+
+
+Responda a las siguientes preguntas
+en el JSON de respuestas:
+\begin{problemlist}
+    \stepcounter{enumi}
+    \stepcounter{enumi}
+    \stepcounter{enumi}
+    \stepcounter{enumi}
+    \pbitem Especifique el \verb|Idx|
+        de las muestras identificadas
+        como perdidas por el cliente.
+    \pbitem Especifique el \verb|Idx|
+        de las muestras que no se
+        han enviado con éxito.
+\end{problemlist}
+Detenga la captura de wireshark y
+guárdela en el fichero
+\texttt{qos0-grupoX.pcapng}.
+
+
+\subsection*{QoS 1}
+\noindent
+Ponga un QoS 1 y ejecute el \texttt{client.py}
+como en el apartado anterior, esta vez
+guardando el log en el archivo
+\texttt{qos1-grupoX.log}.
+
+De nuevo, inicie una captura en wireshark
+filtrando tráfico MQTT y espere a que
+se envíen, al menos, dos tramas PUBLISH.
+Apague la interfaz \texttt{eth0}
+y espere de nuevo a que el cliente
+imprima ``Failed to send message [...]''.
+Vuelva a encender la interfaz.
+
+
+
+
+
+\begin{problemlist}
+    \setcounter{enumi}{6}
+    \pbitem Indique el
+        \texttt{Message Identifier}
+        de los mensajes duplicados.
+
+
+    \pbitem Repita otra captura
+        incrementando el \texttt{keepalive}
+        al doble e indique el
+        \texttt{Message Identifier}
+        de los mensajes perdidos.
+
+\end{problemlist}
+Guarde ambas capturas
+en los ficheros
+\texttt{qos1-grupoX.pcapng} y\\
+\texttt{qos1-x2keepalive-grupoX.pcapng}.
+
+
+
+
+\section*{Entrega}
+\noindent Se subirá a moodle un archivo
+\texttt{clienteX.zip}
+(con \texttt{X} el número de grupo)
+que contenga:
+\begin{enumerate}
+    \item el cliente \texttt{client.py};
+    \item el archivo \texttt{utils.py};
+    \item el JSON de respuestas \texttt{respuestas-X.json};
+    \item las trazas de Wireskark
+        \texttt{captura-connect-grupoX.pcapng},\\
+        \texttt{captura-publish-grupoX.pcapng},
+        \texttt{qos0-grupoX.pcapng},\\
+        \texttt{qos1-grupoX.pcapng},\
+        \texttt{qos1-x2keepalive-grupoX.pcapng}; y
+    \item los logs
+        \texttt{qos0-grupoX.log},
+        \texttt{qos1-grupoX.log}.
+\end{enumerate}
+
+\begin{tcolorbox}
+    \textbf{Atención I}: las capturas
+    deben contener
+    \emph{solamente} tráfico MQTT.\\
+    \textbf{Atención II}: una entrega
+    sin los archivos especificados,
+    o con archivos sin formato especificado
+    tendrá un 0 en los \textbf{Problemas}
+    correspondientes.
+\end{tcolorbox}
+
+
+\end{document}
