@@ -41,7 +41,7 @@ for pkt in cap:
 
         if pkt[l]._all_fields['mqtt.msgtype'] == '3': # PUBLISH
             # Store the duplicate Message Idx
-            if pkt[l]._all_fields['mqtt.dupflag'] == '1':
+            if pkt[l]._all_fields['mqtt.dupflag'] in ['1', 'True']:
                 dups += [ int(pkt[l]._all_fields['mqtt.msgid']) ]
 
 
