@@ -19,6 +19,7 @@ with open(respuestas_json) as f:
 
 ok = 0
 pings = []
+ok_instante = 0
 for pkt in cap:
     time = pkt.frame_info._all_fields['frame.time_relative']
     # frame.time_relative
@@ -35,7 +36,7 @@ for pkt in cap:
         # Check if it matches the required one
         report_idx = human_readable.split(',')[0]
         if report_idx == (X % 5) + 1:
-            ok += 1 if report_idx in str(solucion['instantemuestraX']) else 0
+            ok_instante += 1 if report_idx in str(solucion['instantemuestraX']) else 0
 
 
 
@@ -46,12 +47,13 @@ for pkt in cap:
 # OK PING interval?
 mean_ping = np.mean([p2-p1 for p1,p2 in zip(pings[:-1], pings[1:])])
 #print('mean ping', mean_ping)
-ok += 1 if abs(respuestas['tiempopings'] - mean_ping) / mean_ping < 0.1 else 0
+#print('ping diff', abs(respuestas['tiempopings'] - mean_ping))
+ok += 1 if abs(respuestas['tiempopings'] - mean_ping) < 1 else 0
 #print(abs(respuestas['tiempopings'] - mean_ping) / mean_ping)
 
 
+print(ok_instante)
 print(ok)
-print(int(respuestas['ackmessagetype'] in [2, '2']))
 
 
 

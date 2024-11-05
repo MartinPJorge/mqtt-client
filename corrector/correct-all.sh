@@ -5,33 +5,37 @@
 entregas=$1 # path to DIR with ONLY ZIPs of entregas
 
 # Create CSV with corrections
-echo "student,grupo,lectura,lconnect_0,lconnect_1,publish_0,publish_1,qos0_0,qos0_1,qos1,qos1,double,total" > notas.csv
+echo "student,grupo,lectura,lconnect_0,lconnect_1,publish_0,publish_1,qos0_0,qos0_1,qos1,qos1_double,total" > notas.csv
 
 # Put there just the files avoiding folder recursion
 mkdir /tmp/clean-entregas
 
-for entrega in `ls $entregas`; do
-    # UNZIP submited LAB
-    out_zip=/tmp/${entrega::-4}
-    unzip $entregas/$entrega -d $out_zip 
+## for entrega in `ls $entregas`; do
+##     # UNZIP submited LAB
+##     out_zip=/tmp/${entrega::-4}
+##     unzip $entregas/$entrega -d $out_zip 
+## 
+##     # Create correction DIR
+##     clean_out=/tmp/clean-entregas/${entrega::-4}
+##     mkdir $clean_out
+## 
+##     # Copy the JSONs, PCAPNG and LOGs
+##     for ext in `echo json pcapng log`; do
+##         for file in `find $out_zip -name *$ext`; do
+##             # Get filename: https://stackoverflow.com/a/32372307
+##             fname=`echo "$file" | sed "s/.*\///"`
+##             cp $file $clean_out/$fname
+##         done
+##     done
+## 
+##     # Copy the vitals signs dataset
+##     cp Human_vital_signs_R.csv $clean_out
+## done
 
-    # Create correction DIR
-    clean_out=/tmp/clean-entregas/${entrega::-4}
-    mkdir $clean_out
 
-    # Copy the JSONs, PCAPNG and LOGs
-    for ext in `echo json pcapng log`; do
-        for file in `find $out_zip -name *$ext`; do
-            # Get filename: https://stackoverflow.com/a/32372307
-            fname=`echo "$file" | sed "s/.*\///"`
-            cp $file $clean_out/$fname
-        done
-    done
-
-    # Copy the vitals signs dataset
-    cp Human_vital_signs_R.csv $clean_out
-done
-
+function add_bc {
+    echo "scale=2; $1+$2" | bc
+}
 
 
 # Correct each submission, one by one
@@ -49,7 +53,7 @@ for submission in `ls /tmp/clean-entregas`; do
     # Correct the read
     lectura=`python3 correct_lectura.py $X $group_dir`
     echo -e "\tlectura: $lectura"
-    total=$(( total + lectura ))
+    total=`add_bc $total $lectura`
 
     # Correct the connect
     connect=`python3 correct_connect.py $X "$group_dir"/captura-connect-grupo$X.pcapng $group_dir`
@@ -59,7 +63,7 @@ for submission in `ls /tmp/clean-entregas`; do
         echo -e "\tlconnect_$i: $conni"
         connect_all=$connect_all"$conni,"
         i=$(( i + 1 ))
-        total=$(( total + conni ))
+        total=`add_bc $total $conni`
     done
 
     # Correct the publish
@@ -70,7 +74,7 @@ for submission in `ls /tmp/clean-entregas`; do
         echo -e "\tpublish_$i: $pubi"
         pub_all=$pub_all"$pubi,"
         i=$(( i + 1 ))
-        total=$(( total + pubi ))
+        total=`add_bc $total $pubi`
     done
 
     # Correct the QoS 0
@@ -81,7 +85,7 @@ for submission in `ls /tmp/clean-entregas`; do
         echo -e "\tqos0_$i: $qos0i"
         qos0_all=$qos0_all"$qos0i,"
         i=$(( i + 1 ))
-        total=$(( total + qos0i ))
+        total=`add_bc $total $qos0i`
     done
 
     # Correct the QoS 1
@@ -89,7 +93,10 @@ for submission in `ls /tmp/clean-entregas`; do
     echo -e "\tqos1: $qos1"
     qos1double=`python3 correct_qos1.py $X "$group_dir"/qos1-x2keepalive-grupo$X.pcapng $group_dir x2`
     echo -e "\tqos1double: $qos1double"
-    total=$(( total + qos1 + qos1double ))
+    total=`add_bc $total $qos1`
+    total=`add_bc $total $qos1double`
+
+    total=`echo "scale=2; $total*10/9" | bc`
 
 
     # Output final mark

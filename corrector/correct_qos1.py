@@ -48,6 +48,7 @@ for pkt in cap:
 # Check if all the answered duplicates are in the PCAP
 # and check their lengths match
 answer = 'duplicates' if sys.argv[4]=='x1' else 'duplicatesx2'
-print(int(all([rd in dups for rd in respuestas[answer] ])\
-        and len(respuestas[answer])==len(dups) ))
+print(sum([rd in dups for rd in respuestas[answer] ]) / len(dups))
+#print(int(all([rd in dups for rd in respuestas[answer] ])\
+#        and len(respuestas[answer])==len(dups) ))
 

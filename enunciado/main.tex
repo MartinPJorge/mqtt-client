@@ -318,9 +318,14 @@ preguntas.
         \begin{enumerate}
             \item ¿Cuál es el ID de su cliente?
             \item En la captura wireshark,
-                ¿cuál es el número de trama
+                ¿cuál es el tipo de mensaje
+                MQTT
                 del ACK de la conexión?
         \end{enumerate}
+        Responda rellenando lso campos
+        \texttt{clientid} y
+        \texttt{ackmessagetype} del JSON
+        de respuestas, respectivamente.\\
         Guarde\footnote{Para guardas solo los paquetes MQTT
                 basta con poner en el filtro
                 ``mqtt'',
@@ -386,6 +391,11 @@ en el JSON de respuestas a:
         pasa entre dos 
         Ping de MQTT?
 \end{problemlist}
+Responda rellenando lso campos
+\texttt{instantemuestraX} (no sustituya
+la X por su número de grupo) y
+\texttt{tiempopings} del JSON
+de respuestas, respectivamente.
 
 Guarde la captura en el fichero
 \texttt{captura-publish-grupoX.pcapng}.
@@ -451,6 +461,11 @@ en el JSON de respuestas:
         de las muestras que no se
         han enviado con éxito.
 \end{problemlist}
+Responda rellenando los campos
+\texttt{perdidascliente} y
+\texttt{perdidas} del JSON
+de respuestas, respectivamente.
+
 Detenga la captura de wireshark y
 guárdela en el fichero
 \texttt{qos0-grupoX.pcapng}.
@@ -489,6 +504,11 @@ Vuelva a encender la interfaz.
         de los mensajes perdidos.
 
 \end{problemlist}
+Responda rellenando los campos
+\texttt{duplicates} y
+\texttt{duplicatesx2} del JSON
+de respuestas, respectivamente.
+
 Guarde ambas capturas
 en los ficheros
 \texttt{qos1-grupoX.pcapng} y\\

@@ -55,7 +55,10 @@ for pkt in cap:
 
         # Store the published index
         report_idx = human_readable.split(',')[0]
-        pcap_sent += [int(report_idx)]
+        try:
+            pcap_sent += [int(report_idx)]
+        except ValueError:
+            pass
 
 
 # Obtain not detected losses
@@ -63,10 +66,17 @@ not_detected_losses = [idx for idx in succ if idx not in pcap_sent]
 
 
 # Check if answers miss some PUBLISH Idx
-ok_perdidas_cliente = 0 if any([idx not in respuestas['perdidascliente']\
-        for idx in err]) else 1
-ok_perdidas = 0 if any([idx not in respuestas['perdidas']\
-        for idx in not_detected_losses+err]) else 1
+## ok_perdidas_cliente = 0 if any([idx not in respuestas['perdidascliente']\
+##         for idx in err]) else 1
+## ok_perdidas = 0 if any([idx not in respuestas['perdidas']\
+##         for idx in not_detected_losses+err]) else 1
+
+# Count perdidas cliente
+ok_perdidas_cliente = sum([idx in respuestas['perdidascliente']\
+        for idx in err]) / len(err)
+ok_perdidas = sum([idx in respuestas['perdidas']\
+        for idx in not_detected_losses+err]) / len(not_detected_losses+err)
+
 
 print(ok_perdidas_cliente)
 print(ok_perdidas)
