@@ -21,6 +21,10 @@ ok = 0
 pings = []
 ok_instante = 0
 for pkt in cap:
+    # Check that the highest layer is an MQTT msg
+    if not any(['mqtt' in p for p in pkt[pkt.highest_layer]._all_fields]):
+        continue
+
     time = pkt.frame_info._all_fields['frame.time_relative']
     # frame.time_relative
 

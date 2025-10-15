@@ -18,6 +18,10 @@ with open(respuestas_json) as f:
 
 ok = 0
 for pkt in cap:
+    # Check that the highest layer is an MQTT msg
+    if not any(['mqtt' in p for p in pkt[pkt.highest_layer]._all_fields]):
+        continue
+
     if pkt[pkt.highest_layer]._all_fields['mqtt.msgtype'] == '1':
         clientid = pkt[pkt.highest_layer]._all_fields['mqtt.clientid']
         ok += 1 if clientid == respuestas['clientid'] else 0

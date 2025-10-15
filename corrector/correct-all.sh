@@ -10,27 +10,27 @@ echo "student,grupo,lectura,lconnect_0,lconnect_1,publish_0,publish_1,qos0_0,qos
 # Put there just the files avoiding folder recursion
 mkdir /tmp/clean-entregas
 
-## for entrega in `ls $entregas`; do
-##     # UNZIP submited LAB
-##     out_zip=/tmp/${entrega::-4}
-##     unzip $entregas/$entrega -d $out_zip 
-## 
-##     # Create correction DIR
-##     clean_out=/tmp/clean-entregas/${entrega::-4}
-##     mkdir $clean_out
-## 
-##     # Copy the JSONs, PCAPNG and LOGs
-##     for ext in `echo json pcapng log`; do
-##         for file in `find $out_zip -name *$ext`; do
-##             # Get filename: https://stackoverflow.com/a/32372307
-##             fname=`echo "$file" | sed "s/.*\///"`
-##             cp $file $clean_out/$fname
-##         done
-##     done
-## 
-##     # Copy the vitals signs dataset
-##     cp Human_vital_signs_R.csv $clean_out
-## done
+##for entrega in `ls $entregas`; do
+##    # UNZIP submited LAB
+##    out_zip=/tmp/${entrega::-4}
+##    unzip $entregas/$entrega -d $out_zip 
+##
+##    # Create correction DIR
+##    clean_out=/tmp/clean-entregas/${entrega::-4}
+##    mkdir $clean_out
+##
+##    # Copy the JSONs, PCAPNG and LOGs
+##    for ext in `echo json pcapng log`; do
+##        for file in `find $out_zip -name *$ext`; do
+##            # Get filename: https://stackoverflow.com/a/32372307
+##            fname=`echo "$file" | sed "s/.*\///"`
+##            cp $file $clean_out/$fname
+##        done
+##    done
+##
+##    # Copy the vitals signs dataset
+##    cp Human_vital_signs_R.csv $clean_out
+##done
 
 
 function add_bc {
@@ -100,7 +100,7 @@ for submission in `ls /tmp/clean-entregas`; do
 
 
     # Output final mark
-    for student in `grep alumna $group_dir/respuestas-$X.json | cut -d'"' -f4 | sed 's/ /_/g'`; do
+    for student in `grep alumn $group_dir/respuestas-$X.json | cut -d'"' -f4 | sed 's/ /_/g'`; do
         echo $student,$X,$lectura,$connect_all$pub_all$qos0_all$qos1,$qos1double,$total >> notas.csv
     done
 done
