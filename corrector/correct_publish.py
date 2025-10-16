@@ -39,8 +39,8 @@ for pkt in cap:
 
         # Check if it matches the required one
         report_idx = human_readable.split(',')[0]
-        if report_idx == (X % 5) + 1:
-            ok_instante += 1 if report_idx in str(solucion['instantemuestraX']) else 0
+        if report_idx == str(X): # (X % 5) + 1:
+            ok_instante += 1 if abs(float(time) - respuestas['instantemuestraX'])<1e-3 else 0
 
 
 

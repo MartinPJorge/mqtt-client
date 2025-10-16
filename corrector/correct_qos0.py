@@ -33,7 +33,6 @@ with open(log_path, 'r') as file:
 
 
 
-
 ok = 0
 pings = []
 pcap_sent = []
@@ -46,19 +45,30 @@ for pkt in cap:
 
     if pkt[pkt.highest_layer]._all_fields['mqtt.msgtype'] == '3': # PUBLISH
 
-        # Get the PUBLISH payload as string
-        # https://stackoverflow.com/a/66073701
-        hex_string = str(pkt[pkt.highest_layer]._all_fields['mqtt.msg'])
-        hex_split = hex_string.split(':')
-        hex_as_chars = map(lambda hex: chr(int(hex, 16)), hex_split)
-        human_readable = ''.join(hex_as_chars)
+        # It may happen several MQTT headers are stacked inside one TCP payload
+        for l,k in enumerate(pkt):
+            if 'mqtt.msgtype' not in pkt[l]._all_fields:
+                continue
+            if 'mqtt.msg' not in pkt[l]._all_fields:
+                continue
 
-        # Store the published index
-        report_idx = human_readable.split(',')[0]
-        try:
-            pcap_sent += [int(report_idx)]
-        except ValueError:
-            pass
+            # Get the PUBLISH payload as string
+            # https://stackoverflow.com/a/66073701
+            hex_string = str(pkt[l]._all_fields['mqtt.msg'])
+            hex_split = hex_string.split(':')
+            hex_as_chars = map(lambda hex: chr(int(hex, 16)), hex_split)
+            human_readable = ''.join(hex_as_chars)
+
+
+            # Store the published index
+            #print(human_readable)
+            delim = ',' if ',' in human_readable else ';'
+            report_idx = human_readable.split(delim)[0]
+            #print(report_idx)
+            try:
+                pcap_sent += [int(report_idx)]
+            except ValueError:
+                pass
 
 
 # Obtain not detected losses
@@ -71,11 +81,21 @@ not_detected_losses = [idx for idx in succ if idx not in pcap_sent]
 ## ok_perdidas = 0 if any([idx not in respuestas['perdidas']\
 ##         for idx in not_detected_losses+err]) else 1
 
+
+# Find consecutive losses in the pcap
+expected_pkts = []
+idx = pcap_sent[0]
+while idx <= pcap_sent[-1]:
+    expected_pkts.append(idx)
+    idx += 1
+pcap_losses = [idx for idx in expected_pkts if idx not in pcap_sent]
+
+
 # Count perdidas cliente
 ok_perdidas_cliente = sum([idx in respuestas['perdidascliente']\
         for idx in err]) / len(err)
-ok_perdidas = sum([idx in respuestas['perdidas']\
-        for idx in not_detected_losses+err]) / len(not_detected_losses+err)
+ok_perdidas = sum([idx in pcap_losses\
+        for idx in respuestas['perdidas']]) / len(pcap_losses)
 
 
 print(ok_perdidas_cliente)
